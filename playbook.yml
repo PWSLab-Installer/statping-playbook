@@ -1,0 +1,42 @@
+- hosts: localhost
+  connection: local
+
+  vars:
+    mysql_databases: 
+        - name: statping
+  tasks:
+      
+    -   name: Check the version of OS
+        command: hostnamectl
+        register: os_check
+        ignore_errors: yes  
+
+    - name: Fetch Statping
+      git:
+        repo: https://ro:DZtyTW9MnPYvkmZK1Lnt@pwslab.org/ansible/statping-playbook.git
+        dest: /root/.ansible/roles/pwslab.statping
+        version: master
+        force: yes
+
+    -   name: Install Role MySQL
+        local_action: command ansible-galaxy install -f geerlingguy.mysql
+
+    -   name: Check if MYSQL is already installed
+        stat: path=/usr/bin/mysql
+        register: mysql_exists
+
+    -   name: Applying role MYSQL
+        command: mv ~/.ansible/roles/geerlingguy.mysql ~/.ansible/roles/pwslab.mysql
+        when: not mysql_exists.stat.exists
+        ignore_errors: yes
+
+    -   name: Installing MYSQL
+        include_role:
+            name: pwslab.mysql
+        when: not mysql_exists.stat.exists
+
+    -   name: Installing Statping
+        include_role:
+            name: pwslab.statping
+
+    
